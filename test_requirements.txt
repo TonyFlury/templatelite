@@ -1,0 +1,6 @@
+click
+flake8
+tox
+sphinx-rtd-theme
+coverage
+six>=1.10
