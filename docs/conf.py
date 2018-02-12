@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# templating documentation build configuration file, created by
+# templatelite documentation build configuration file, created by
 # sphinx-quickstart on Fri Dec 11 23:10:32 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -17,10 +17,10 @@ import os.path
 
 sys.path = [os.path.abspath(os.path.os.path.dirname(os.path.dirname(__file__)))] + sys.path
 
-import templating
+import templatelite
 
-from templating.version import __version__ as version, __author__ as author, __copyright__ as copyright, __email__ as email, __release__ as release
-project = u'templating'
+from templatelite.version import __version__ as version, __author__ as author, __copyright__ as copyright, __email__ as email, __release__ as release
+project = u'templatelite'
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -202,7 +202,7 @@ html_show_copyright = True
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'templatingdoc'
+htmlhelp_basename = 'templatelitedoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -224,7 +224,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'templating.tex', u'templating Documentation',
+  (master_doc, 'templatelite.tex', u'templatelite Documentation',
    [author], 'manual'),
 ]
 
@@ -254,7 +254,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'templating', u'templating Documentation',
+    (master_doc, 'templatelite', u'templatelite Documentation',
      [author], 1)
 ]
 
@@ -268,8 +268,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'templating', u'templating Documentation',
-   author, 'templating', 'Lightweight Templating system.',
+  (master_doc, 'templatelite', u'templatelite Documentation',
+   author, 'templatelite', 'Lightweight Templating system.',
    'Miscellaneous'),
 ]
 

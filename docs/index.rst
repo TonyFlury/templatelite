@@ -1,6 +1,6 @@
 
 =======================================================
-templating: Lightweight Templating system
+templatelite: Lightweight Templating system
 =======================================================
 
 
@@ -9,13 +9,19 @@ templating: Lightweight Templating system
   If you do find an error - please report the problem on :
 
     - `GitHub Issues`_
-    - By email to : `Tony Flury:`_
+    - By email to : `Tony Flury`_
 
 .. toctree::
     :maxdepth: 2
 
     Installation
-    GettingStarted
+    Introduction
+    TemplateLanguage/ContextVariables
+    TemplateLanguage/Filters
+    TemplateLanguage/ForLoops
+    TemplateLanguage/IfDirective
+    templatelite
 
-.. _Github Issues: http://github.com/TonyFlury/templating/issues/new
-.. _Tony Flury : mailto:anthony.flury@btinternet.com?Subject=templating%20Error
+
+.. _Github Issues: http://github.com/TonyFlury/templatelite/issues/new
+.. _Tony Flury: mailto:anthony.flury@btinternet.com?Subject=templatelite%20Error

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 """
-Implementation of setup.py for templating library
+Implementation of setup.py for templatelite library
     ....
 """
 
@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-from templating.version import __version__ as version
+from templatelite.version import __version__ as version
 
 __author__ = 'Tony Flury anthony.flury@btinternet.com'
 __created__ = '04 Feb 2018'
@@ -23,17 +23,17 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='templating',
+    name='templatelite',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
 
-    description='templating: A very lightweight templating system - suitable for simple html and python code',
+    description='templatelite: A very lightweight templating system - suitable for simple html and python code',
     long_description=long_description,
 
     # The project's main homepage.
-    url='http://templating.readthedocs.org/en/latest/',
+    url='http://templatelite.readthedocs.org/en/latest/',
 
     # Author details
     author='Tony Flury',

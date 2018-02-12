@@ -1,0 +1,10 @@
+.tox/**
+.idea/**
+build/**
+dist/**
+docs/_build/**
+doc/_build_html/**
+docs/_static/**
+docs/_templates/**
+htmlcov/**
+templatelite.egg-info/**
