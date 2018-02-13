@@ -13,12 +13,12 @@ Within templatelite, for loops have the following format:
     {% endfor %}
 
 
-    ``<targets>``
-        a comma separated list of names (without dots) - just as in normal python each of these targets are created as local variables within the template, and can be accessed as if they are context variables.
-    ``<iterable>``
-        any :ref:``expression`` which returns an iterable (as per usual python syntax). All names which are not quoted are assumed to be either local names created as the targets of other for loops, or context variables. These are full python syntax expression, including index and slicing, function calls and all mathematical and logical operators.See :ref:``expressions`` for more details.
-    ``<Loop statements>``
-        Any combination of text, :ref:``ContextVariables``, other loops, and :ref:``IfConditionals``
+``<targets>``
+    a comma separated list of names (without dots) - just as in normal python each of these targets are created as local variables within the template, and can be accessed as if they are context variables.
+``<iterable>``
+    any :ref:``expression`` which returns an iterable (as per usual python syntax). All names which are not quoted are assumed to be either local names created as the targets of other for loops, or context variables. These are full python syntax expression, including index and slicing, function calls and all mathematical and logical operators.See :ref:``expressions`` for more details.
+``<Loop statements>``
+    Any combination of text, :ref:``ContextVariables``, other loops, and :ref:``IfConditionals``
 
 Note that the ``{% endfor %}`` directive is mandatory.
 
