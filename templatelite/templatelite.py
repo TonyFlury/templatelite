@@ -16,40 +16,46 @@ from collections import deque as deque
 from functools import wraps
 import re
 import six
-import types
 
 if six.PY2:
     from collections import Mapping
 else:
     from collections.abc import Mapping
 
-from .version import *
 
 def registerModifier(name):
     """Helper function to register a modifier function"""
+
     def _outer(f):
         @wraps(f)
         def _wrapper(value, *args, **kwargs):
             return f(value, *args, **kwargs)
-        Renderer._register_filter(name, _wrapper)
+
+        Renderer.register_filter(name, _wrapper)
         return _wrapper
+
     return _outer
+
 
 class UnknownContextValue(Exception):
     """Raised when a Context Variable does not exist. This is the dot separated version of the variable name"""
     pass
 
+
 class UnrecognisedFilter(Exception):
     """Raised when a filter is invoked on a Context Variable, but the filter is not recognised."""
     pass
+
 
 class UnexpectedFilterArguments(Exception):
     """Raised when arguments are provided for a given filter, but where those arguments were not unexpected."""
     pass
 
+
 class TemplateSyntaxError(Exception):
     """Raised when the template does not meet the expected syntax - this will be caused by an missing or unexpected directive"""
     pass
+
 
 class Renderer(object):
     """A General purpose Template renderer
@@ -58,7 +64,7 @@ class Renderer(object):
         :param errors: A Boolean flag - True if errors in the template should
                     cause an exception
         :param default: The default value to insert into the template if an error
-                    occurrs.
+                    occurs.
         :param remove_indentation: Whether or not to remove the left margin indentation.
 
         By using the default values from the class, any data access error in a ``ContextVariable`` will
@@ -70,34 +76,39 @@ class Renderer(object):
         If ``errors`` is set then any error within the template will cause a ``UnknownContextValue``, ``UnrecognisedFilter`` or ``UnexpectedFilterArguments`` exception as appropriate.
 
         The ``remove_indentation`` flag will strip all left margin indentation from the template as it renders. This setting is suitable for templates
-        where any identation is inconsequatial (e.g. html). If the template is intended to create output where indentation needs to be preserved (Restructured Text (.rst), Python Source Code (.py) then ``remove_indentation`` needs to set to false).
+        where any indentation is inconsequential (e.g. html). If the template is intended to create output where indentation needs to be preserved (Restructured Text (.rst), Python Source Code (.py) then ``remove_indentation`` needs to set to false).
     """
     # Split template into tokens surrounded by {{ }}, {% %}, or {# #}
-    _token_splitter_re = re.compile(r'({{.*?}}|[ \t]*{%.*?%}\n|{#.*?#}|\n)', flags=re.DOTALL)
+    _token_splitter_re = re.compile(r'({{.*?}}|[ \t]*{%.*?%}\n|{#.*?#}|\n)',
+                                    flags=re.DOTALL)
 
     # Split arguments out for filters
-    _split_args_re = re.compile(r"(?P<keyword>[a-zA-Z]\w*?:)?(?P<value>((\'.*?\')|((?<!\')[^:]+?))(?=\s|$))")
+    _split_args_re = re.compile(
+        r"(?P<keyword>[a-zA-Z]\w*?:)?(?P<value>((\'.*?\')|((?<!\')[^:]+?))(?=\s|$))")
 
     # Parse the target and iterables for a for loop, if statement and if else
-    _for_parse_re = re.compile(r"^for\s+?(?P<target>.+)\s+?in\s+(?P<iterable>.+)$")
+    _for_parse_re = re.compile(
+        r"^for\s+?(?P<target>.+)\s+?in\s+(?P<iterable>.+)$")
     _if_parse_re = re.compile(r'if\s+?(?P<expression>.+)$')
     _elif_parse_re = re.compile(r'elif\s+?(?P<expression>.+)$')
 
     # Find variables within expressions - name.name.name|name is valid
-    _variable_re = re.compile(r'\b(?P<Variable>(?<!\'>)([a-zA-Z]\w*)(\.[a-zA-Z]\w*)*([|][a-zA-Z]\w*){0,1}(?!\')(?=\W|$))')
+    _variable_re = re.compile(
+        r'\b(?P<Variable>(?<!\'>)([a-zA-Z]\w*)(\.[a-zA-Z]\w*)*([|][a-zA-Z]\w*)?(?!\')(?=\W|$))')
 
     _filters = {}
 
-    _FILTER_SEP= '|'
+    _FILTER_SEP = '|'
 
-    def __init__(self, template_str=None, errors=False, default=None, remove_indentation=True):
+    def __init__(self, template_str=None, errors=False, default=None,
+                 remove_indentation=True):
         """A General purpose Template renderer
 
             :param template_str: The Template to render
             :param errors: A Boolean flag - True if errors in the template should
                         cause an exception
             :param default: The default value to insert into the template if an error
-                        occurrs. If None the
+                        occurs. If None the
         """
         self._indent = 4
         self._extend = False
@@ -112,9 +123,21 @@ class Renderer(object):
         self._render = self._compile()
 
     @classmethod
-    def _register_filter(cls, name, function):
+    def register_filter(cls, name, filter_callable):
         """Register a named modifier - internal use only"""
-        cls._filters[name] = function
+        cls._filters[name] = filter_callable
+
+    @classmethod
+    def execute_filter(cls, filter_name, var_name, var, *args, **kwargs):
+        """Generic class method to execute a named filter"""
+        func = cls._filters[filter_name]
+        try:
+            return func(var, *args, **kwargs)
+        except UnexpectedFilterArguments:
+            six.raise_from(UnexpectedFilterArguments(
+                "Unexpected filter arguments in \'{var_name}|{filter_name} {args} {kwargs}\'".format(
+                    var_name=var_name, filter_name=filter_name,
+                    args=''.join(args), kwargs=' '.join(kwargs))), None)
 
     def _end_block(self, dedent=False):
         if self._extend:
@@ -134,7 +157,8 @@ class Renderer(object):
             to = match.start('Variable')
             s += expression_text[last_end:to]
             var = match.group('Variable')
-            if var in ['in','is','not','True','False','and','or','xor','lambda']:
+            if var in ['in', 'is', 'not', 'True', 'False', 'and', 'or', 'xor',
+                       'lambda']:
                 s += var
             else:
                 s += self._compile_context_variable(var, as_string=False)
@@ -147,28 +171,31 @@ class Renderer(object):
         m = self._if_parse_re.match(statement_token)
         if not m:
             six.raise_from(TemplateSyntaxError(
-                    'Syntax Error : Invalid if statement \'{{% {} %}}\''.format(
-                        statement_token)), None)
+                'Syntax Error : Invalid if statement \'{{% {} %}}\''.format(
+                    statement_token)), None)
         expression = self._compile_expression(m.group('expression'))
-        self._block_stack.append(('if',None))
+        self._block_stack.append(('if', None))
         self._end_block()
-        self._source_parts.append(' '* self._indent + 'if {}'.format(expression) + ':\n')
+        self._source_parts.append(
+            ' ' * self._indent + 'if {}'.format(expression) + ':\n')
         self._start_block(indent=True)
 
     def _compile_elif(self, statement_token):
         start_block = self._block_stack.pop()
         if start_block[0] != 'if':
             six.raise_from(TemplateSyntaxError(
-                'Syntax Error : Unexpected directive - found \'{{% elif %}}\' expected \'{{% if %}}\''), None)
+                'Syntax Error : Unexpected directive - found \'{{% elif %}}\' expected \'{{% if %}}\''),
+                None)
         m = self._elif_parse_re.match(statement_token)
         if not m:
             six.raise_from(TemplateSyntaxError(
-                    'Syntax Error : Invalid elif statement \'{{% {} %}}\''.format(
-                        statement_token)), None)
+                'Syntax Error : Invalid elif statement \'{{% {} %}}\''.format(
+                    statement_token)), None)
         expression = self._compile_expression(m.group('expression'))
-        self._block_stack.append(('elif',None))
+        self._block_stack.append(('elif', None))
         self._end_block(dedent=True)
-        self._source_parts.append(' '* self._indent + 'elif {}'.format(expression) + ':\n')
+        self._source_parts.append(
+            ' ' * self._indent + 'elif {}'.format(expression) + ':\n')
         self._start_block(indent=True)
 
     def _compile_endif(self, token):
@@ -187,14 +214,14 @@ class Renderer(object):
                     token)), None)
 
         start_block = self._block_stack.pop()
-        if start_block[0] == 'if' or start_block[0] == 'elif' or start_block[0] == 'for':
+        if [start_block[0] == 'if' or start_block[0] == 'elif' or start_block[0] == 'for']:
             if start_block[1] == 'else':
                 six.raise_from(TemplateSyntaxError(
                     'Syntax Error : Unexpected directive - found \'{{% else %}}\' expected \'{{% endif %}}\''.format(
                         token)), None)
 
             self._end_block(dedent=True)
-            self._source_parts.append(' ' * self._indent + 'else'+ ':\n')
+            self._source_parts.append(' ' * self._indent + 'else' + ':\n')
             self._block_stack.append((start_block[0], 'else'))
             self._start_block(indent=True)
 
@@ -216,9 +243,10 @@ class Renderer(object):
         self._block_stack.append(('for', None))
         self._locals.add(m.group('target'))
         self._end_block()
-        self._source_parts.append(' ' * self._indent + 'for {targets} in {iterable}:\n'.format(
-                            targets=m.group('target'),
-                            iterable=self._compile_expression(m.group('iterable'))))
+        self._source_parts.append(
+            ' ' * self._indent + 'for {targets} in {iterable}:\n'.format(
+                targets=m.group('target'),
+                iterable=self._compile_expression(m.group('iterable'))))
         self._start_block(indent=True)
 
     def _compile_endfor(self, token):
@@ -234,7 +262,6 @@ class Renderer(object):
 
         self._start_block()
         self._extend = False
-        prev_token = ''
         for token in token_stream:
 
             if not token:
@@ -269,14 +296,19 @@ class Renderer(object):
                     self._compile_else(inner_token)
                     continue
 
-                if inner_token in ['break','continue']:
-                    if ('for',None) not in self._block_stack:
-                        six.raise_from(TemplateSyntaxError('Syntax Error : \'{{% {} %}}\' directive found outside loop'.format(inner_token)),None)
+                if inner_token in ['break', 'continue']:
+                    if ('for', None) not in self._block_stack:
+                        six.raise_from(TemplateSyntaxError(
+                            'Syntax Error : \'{{% {} %}}\' directive found outside loop'.format(
+                                inner_token)), None)
                     self._end_block()
-                    self._source_parts.append(' ' * self._indent +inner_token + '\n')
+                    self._source_parts.append(
+                        ' ' * self._indent + inner_token + '\n')
                     continue
 
-                six.raise_from(TemplateSyntaxError('Syntax Error : Unexpected directive : {}'.format(inner_token)), None)
+                six.raise_from(TemplateSyntaxError(
+                    'Syntax Error : Unexpected directive : {}'.format(
+                        inner_token)), None)
 
             if token.startswith('{{'):
                 value = self._compile_context_variable(token[2:-2])
@@ -292,14 +324,11 @@ class Renderer(object):
             if self._extend:
                 self._source_parts.append('str({})'.format(value) + ',')
 
-            prev_token = token
-
         if self._extend:
             self._source_parts.append('])\n')
 
     def _compile(self):
         """Compile a template into an executable function"""
-        source = []
 
         indent = 4
         self._extend = False
@@ -330,7 +359,7 @@ class Renderer(object):
         self._source = ''.join(self._source_parts)
         globals_source = {}
         try:
-            six.exec_(self._source, globals_source, None)
+            six.exec_(self._source, globals_source)
             return globals_source['render']
         except Exception as e:
             six.raise_from(e, None)
@@ -351,14 +380,15 @@ class Renderer(object):
         if self._FILTER_SEP in token:
             ret = self._compile_filtered_token(token)
         else:
-            ret = 'renderer._dodots({!r},context, as_string={!r})'.format(token,as_string)
+            ret = 'renderer._dodots({!r},context, as_string={!r})'.format(
+                token, as_string)
 
         return ('str(' + ret + ')') if as_string else ret
 
     def _dodots(self, token, context, as_string=True):
         """Process a expression - i.e. access to a data item within the context
 
-           A wapper around self._resolvedots so that errors are dealt with as
+           A wrapper around self._resolvedots so that errors are dealt with as
            requested by the caller
            :param as_string:
         """
@@ -381,7 +411,8 @@ class Renderer(object):
         else:
             return str(result) if as_string else result
 
-    def _resolvedots(self, token, context):
+    @staticmethod
+    def _resolvedots(token, context):
         """convert a dotted token into an actual value
 
            Process a dotted value - where each node is either :
@@ -392,26 +423,26 @@ class Renderer(object):
 
            It is allowed that the attribute or callable need not be the leaf node,
            so long as the value of the attribute or returned by the callable is valid
-           for the subsquent nodes.
+           for the subsequent nodes.
         """
         current_value = context
 
-        for subitem in token.split('.'):
+        for sub_item in token.split('.'):
             if isinstance(current_value, Mapping):
                 try:
-                    current_value = current_value[subitem]
+                    current_value = current_value[sub_item]
                     continue
                 except KeyError:
                     six.raise_from(UnknownContextValue(
                         'Unknown context variable \'{}\''.format(
                             token)), None)
 
-            if hasattr(current_value, subitem):
-                if callable(getattr(current_value, subitem)):
-                    current_value = str(getattr(current_value, subitem)())
+            if hasattr(current_value, sub_item):
+                if callable(getattr(current_value, sub_item)):
+                    current_value = str(getattr(current_value, sub_item)())
                     continue
                 else:
-                    current_value = str(getattr(current_value, subitem))
+                    current_value = str(getattr(current_value, sub_item))
                     continue
             else:
                 six.raise_from(UnknownContextValue(
@@ -425,27 +456,31 @@ class Renderer(object):
 
            Handles filter with and without args
         """
-        id, filter = token.split(self._FILTER_SEP)
+        token, filter_name = token.split(self._FILTER_SEP)
 
-        # Split off any arguments
-        if ' ' in filter:
-            filter, args = filter[:filter.find(' ')], filter[
-                                                      filter.find(' ') + 1:]
+        # Split off any arguments - working from the first space
+        if ' ' in filter_name:
+            first_space = filter_name.find(' ')
+            filter_name, args = filter_name[:first_space], filter_name[first_space + 1:]
         else:
-            filter, args = filter, None
+            filter_name, args = filter_name, None
 
         pargs, kwargs = self._split_args(args) if args else ((), {})
 
-        if filter in self.__class__._filters:
-            try:
-                return self.__class__._filters[filter](id, *pargs, **kwargs)
-            except UnexpectedFilterArguments:
-                six.raise_from(UnexpectedFilterArguments(
-                    'Unexpected filter arguments in \'{}\''.format(token)),
-                               None)
+        if filter_name in self.__class__._filters:
+            return 'renderer.__class__.execute_filter( {filter_name!r},' \
+                   '                {token!r},' \
+                   '                renderer._dodots({var!r},context),' \
+                   '                *{pargs!r}, **{kwargs!r})'.format(
+                cls_name=self.__class__.__name__,
+                filter_name=filter_name,
+                token=token,
+                var=token,
+                pargs=pargs,
+                kwargs=kwargs)
         else:
             six.raise_from(
-                UnrecognisedFilter('Unknown filter \'{}\''.format(filter)),
+                UnrecognisedFilter('Unknown filter \'{}\''.format(filter_name)),
                 None)
 
         # Todo Extend for publicly defined filters ?
@@ -460,7 +495,6 @@ class Renderer(object):
              m.group('keyword') is not None])
         return p_args, kw_args
 
-
     def from_context(self, *contexts):
         """Public I/f Render the template based on one or more dictionaries"""
         this_context = {}
@@ -469,31 +503,33 @@ class Renderer(object):
 
         if not self._render:
             return None
-        return self._render( self, this_context)
+        return self._render(self, this_context)
+
 
 @registerModifier('len')
-def variable_length( id, *args, **kwargs):
+def variable_length(var, *args, **kwargs):
     """Returns a compiled call to len"""
     if args or kwargs:
         raise UnexpectedFilterArguments
-    return 'len(str(renderer._dodots({!r},context)))'.format(id)
+    return len(var)
+
 
 @registerModifier('split')
-def variable_split(id,  *args, **kwargs):
+def variable_split(var, *args, **kwargs):
     """Returns a compiled call to capitalize"""
-    if len(args) >1 or kwargs:
+    if len(args) > 1 or kwargs:
         raise UnexpectedFilterArguments
     split_arg = (args[0],) if args else tuple()
-    print(split_arg)
-    return 'renderer._dodots({!r},context).split({!r})'.format(id,*(split_arg) )
+    return str(var).split(*split_arg)
+
 
 @registerModifier('cut')
-def variable_split(id,  *args, **kwargs):
+def variable_split(var, *args, **kwargs):
     """Returns a compiled call to capitalize"""
     if 0 > len(args) > 1 or kwargs:
         raise UnexpectedFilterArguments
-    return 'renderer._dodots({!r},context).replace({!r})'.format( id, args[0])
+    return str(var).replace(args[0], '')
 
-#To Do Test cut, implement center, date and other filters
+# To Do Test cut, implement center, date and other filters
 
-#Todo Rework Filter system to allow registration of filters
+# Todo Rework Filter system to allow registration of filters

@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # coding=utf-8
 """
 # templatelite : Lightweight Templating system
@@ -167,8 +168,9 @@ class Filters(unittest.TestCase):
     def test_020_002e_length_filter_with_args(self):
         """Test the Length filter with arguments (in error)"""
         template = 'My name is {{person.name|len 193}}'
-        with six.assertRaisesRegex(self, templatelite.UnexpectedFilterArguments, r'Unexpected filter arguments in \'person.name\|len 193\''):
-            renderer = templatelite.Renderer(template_str=template, errors=True)
+        renderer = templatelite.Renderer(template_str=template, errors=True)
+        with six.assertRaisesRegex(self, templatelite.UnexpectedFilterArguments, r"Unexpected filter arguments in 'person.name\|len 193\s*'"):
+            result = renderer.from_context({'person':{'name':'Tony'}})
 
     def test_020_010_split_filter(self):
         """Test the capitalise filter with default"""
@@ -187,8 +189,9 @@ class Filters(unittest.TestCase):
     def test_020_012_split_filter_error(self):
         """Test the capitalise filter with default"""
         template = 'My name is {{v|split e b}}'
-        with six.assertRaisesRegex(self, templatelite.UnexpectedFilterArguments, r'Unexpected filter arguments in \'v\|split e b\''):
-            renderer = templatelite.Renderer(template_str=template, errors=True)
+        renderer = templatelite.Renderer(template_str=template, errors=True)
+        with six.assertRaisesRegex(self, templatelite.UnexpectedFilterArguments, r"Unexpected filter arguments in 'v\|split e b\s*'"):
+            renderer.from_context({'v':'Hello'})
 
 class IfStatement(unittest.TestCase):
     def test_030_000_invalid_if_missing_expression(self):
