@@ -25,7 +25,7 @@ Within the templating language there is support for the display of data from  th
 
     {{ name }}
 
-When this template is rendered using a dictionary with a key of `name`, the output will be the template with `{{ name }}` replaced with the value in the dictionary for that key. See :ref:``ContextVariables`` for more details.
+When this template is rendered using a dictionary with a key of `name`, the output will be the template with `{{ name }}` replaced with the value in the dictionary for that key. See :ref:`ContextVariables` for more details.
 
 Control Structures
 ==================
@@ -42,7 +42,7 @@ Tempalite supports for loops which allow for iteration around context data :
         {{ person }}
     {% endfor %}
 
-For full details of the for loop see :ref:``ForLoops``. The templatelite module does not have while loops.
+For full details of the for loop see :ref:`ForLoops`. The templatelite module does not have while loops.
 
 
 Conditional Branching
@@ -58,7 +58,7 @@ Tempalite supports if statements so that your template can implement 'decisions'
         A commoner
     {% endif %}
 
-For full details of the if directive see :ref:``IfConditionals``.
+For full details of the if directive see :ref:`IfConditionals`.
 
 Comments
 ========
