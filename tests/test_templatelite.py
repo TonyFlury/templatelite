@@ -54,7 +54,6 @@ class SimpleTextAndComments(unittest.TestCase):
 and this is mo{# no whitespace inserted #}re text
 {#Final comment #}This is it."""
         renderer = templatelite.Renderer(template)
-        print(renderer._source)
         self.assertEqual( renderer.from_context(),
 """This is text 
 and this is more text
@@ -206,16 +205,43 @@ class IfStatement(unittest.TestCase):
 
     def test_030_002_invalid_lone_else(self):
         template = """{% else %}"""
-        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% else %}\' without if or for"):
+        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% else %}\' outside {% if %} or {% for %} block"):
             renderer = templatelite.Renderer(template_str=template)
 
-    def test_030_001_invalid_lone_else(self):
+    def test_030_003_invalid_lone_else(self):
         template = """{% if True %}
 Hello
 {% else %}
 Goodbye
 {% else %}"""
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% else %}\' expected \'{% endif %}\'"):
+            renderer = templatelite.Renderer(template_str=template)
+
+    def test_030_004_invalid_lone_elif(self):
+        template = """{% elif True %}
+        {% endif %}"""
+        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError,
+                                   r"Syntax Error : Unexpected directive - found \'{% elif %}\' outside an \'{% if %}\' block"):
+            renderer = templatelite.Renderer(template_str=template)
+
+    def test_030_005_invalid_elif(self):
+        template = """{% if True %}
+        {% elif %}
+        {% endif %}"""
+        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError,
+                                   r"Syntax Error : Invalid elif statement \'{% elif %}\'"):
+            renderer = templatelite.Renderer(template_str=template)
+
+    def test_030_006_invalid_if_expression(self):
+        template = """{% if True+ %}
+        {% endif %}"""
+        with self.assertRaises(SyntaxError):
+            renderer = templatelite.Renderer(template_str=template)
+
+    def test_030_005_invalid_endif(self):
+        template = """{% endif %}"""
+        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError,
+                                   r"Syntax Error : Unexpected directive - found \'{% endif %}\' outside an \'{% if %}\' block"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_010_valid_if_endif(self):
@@ -342,15 +368,21 @@ class ForLoop(unittest.TestCase):
 
     def test_040_005_break_outside_loop(self):
         template = '{% break %}'
-        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : \'{% break %}\' directive found outside loop"):
+        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% break %}\' outside \'{% for %}\' block"):
             renderer = templatelite.Renderer(template_str=template)
 
-    def test_040_006_break_outside_loop(self):
+    def test_040_006_coontinue_outside_loop(self):
         template = '{% continue %}'
-        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : \'{% continue %}\' directive found outside loop"):
+        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% continue %}\' outside \'{% for %}\' block"):
             renderer = templatelite.Renderer(template_str=template)
 
-    def test_040_005_syntax_check_for_loop(self):
+    def test_040_006_endfor_outside_loop(self):
+        template = '{% endfor %}'
+        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% endfor %}\' outside \'{% for %}\' block"):
+            renderer = templatelite.Renderer(template_str=template)
+
+
+    def test_040_010_syntax_check_for_loop(self):
         """Prove that for loop completes syntax check"""
         template =\
 """{% for z, plip in dummy%}
@@ -360,7 +392,7 @@ outer block
 """
         renderer = templatelite.Renderer(template_str=template)
 
-    def test_040_010_simple_for(self):
+    def test_040_011_simple_for(self):
         """Simple For loop"""
         template =\
 """FirstLine
@@ -424,6 +456,28 @@ outer block
         self.assertEqual('', renderer.from_context({'dummy': [1,2,3,4,5]}).strip())
         self.assertEqual('Not Found !', renderer.from_context({'dummy': [1,2,4,5]}).strip())
 
+    def test_040_030_filter_on_for_loop_target(self):
+        template = """{% for n in dummy%}
+        {{ n|len }}
+            {% endfor %}"""
+        renderer = templatelite.Renderer(template_str=template, remove_indentation=True)
+        self.assertEqual('0\n1\n2\n3\n4', renderer.from_context({'dummy': ['','1','22','333','4444']}).strip())
+
+    def test_040_040_for_loop_variable_error(self):
+        template = """{% for n in doesnt_exist %}
+inside loop
+            {% endfor %}"""
+        renderer = templatelite.Renderer(template_str=template,
+                                         remove_indentation=True)
+        self.assertEqual('', renderer.from_context({}).strip())
+
+
+class ErrorConditions(unittest.TestCase):
+
+    def test_100_000_invalid_directive(self):
+        template = """{% frooble %}"""
+        with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r'Syntax Error : Unexpected directive \'{% frooble %}\' found'):
+            renderer = templatelite.Renderer(template_str=template)
 
 # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
 def load_tests(loader, tests=None, patterns=None,excludes=None):
