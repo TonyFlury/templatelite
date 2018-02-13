@@ -20,6 +20,7 @@ templatelite: Lightweight Templating system
     TemplateLanguage/Filters
     TemplateLanguage/ForLoops
     TemplateLanguage/IfDirective
+    TemplateLanguage/filters
     templatelite
 
 

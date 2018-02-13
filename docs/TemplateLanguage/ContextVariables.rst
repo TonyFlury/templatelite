@@ -48,17 +48,5 @@ Filters can be applied at the end of dotted names (wether in :ref:``displayed da
 
 See :ref:``filters`` for a full list of filters.
 
-String filters
-##############
-
-    len
-        Returns the length of the context variable - equivalent to len(<variable>)
-        ``{{ var|len }}`` : is equivalent to len(var)
-
-
-    split
-        Splits the contex variable into a list. As a default this splits the value at each space character, equivalent to <variable>.split()
-        Takes one optional argument which is the character to split on.
-        ``{{var|split 'x'}}`` : is equivalent to var.split('x')
 
 
