@@ -23,7 +23,7 @@ displayed data
 Within displayed data, an example dotted name of ``person.name`` variable will mean one of three things :
 
   - If the ``person`` key within the context is a dictionary (or any object which suports a Mapping type interface, then ``person.name`` in the template is equivalent to python code:  ``person['name']``
-  - if ``person`` key within the context is an object which has a ``name`` method, then ``person.name`` in the template will be equivalent to ``person.name()` - there is no capability within displayed context variables (i.e. those enclosed in `{{` `}}` within dotted names to pass parameters to these methods - but see :ref:``filters``.
+  - if ``person`` key within the context is an object which has a ``name`` method, then ``person.name`` in the template will be equivalent to ``person.name()`` - there is no capability within displayed context variables (i.e. those enclosed in `{{` `}}` within dotted names to pass parameters to these methods - but see :ref:``filters``.
   - if ``person`` key within the context is an object which has a ``name`` attribute, then ``person.name`` in the template will be equivalent to ``person.name``.
 
 These dotted names can be nested as deep as required; there is no reason why a context variable of for instance : ``company.client.recent_order.value`` shouldn't actually be translated to the equivalent of context.client['recent_order'].value()
