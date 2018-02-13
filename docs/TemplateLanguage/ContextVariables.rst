@@ -33,7 +33,7 @@ These dotted names can be nested as deep as required; there is no reason why a c
 Expressions
 ###########
 
-Within :ref:`For Loop<ForLoops>` or :ref:`If Statement<IfConditional>` then as well the tempalite dotted name extensions above, normal python syntax for data access can be used; for instance:
+Within :ref:`For Loop<ForLoops>` or :ref:`If Statement<IfConditionals>` then as well the tempalite dotted name extensions above, normal python syntax for data access can be used; for instance:
 
   - access by numeric index or slicing using ``container[index|slice]``: here container will be a valid :ref:`dotted name<dotted_name>` as above, and index/slice can either be a literal numeric value, or be another :ref:`dotted name<dotted_name>`
   - access to keys in dictionaries using ``container[key]`` where container is a dotted name and key can be a literal name, or another dotted name,
