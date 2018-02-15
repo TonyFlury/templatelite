@@ -171,7 +171,7 @@ class Renderer(object):
                        'lambda']:
                 s += var
             else:
-                s += self._compile_context_variable(var, as_string=False)
+                s += self._compile_filtered_token(var)
             last_end = match.end('Variable')
         else:
             s += expression_text[last_end:]
@@ -328,9 +328,9 @@ class Renderer(object):
                 ' ' * self._indent + 'segment_extend([')
             self._extend = True
 
-        self._block_source.append('str({})'.format(text) + ',')
+        self._block_source.append(text + ',')
 
-    def _token_stream(self, token_stream):
+    def _compile_token_stream(self, token_stream):
         """Compile the main chunk of the template
         """
 
@@ -374,12 +374,12 @@ class Renderer(object):
                         inner_token)), None)
 
             if token.startswith('{{'):
-                value = self._compile_context_variable(inner_token)
+                value = 'str({})'.format(self._compile_filtered_token(token))
+
             else:
                 value = repr(
                     token if not self._ignore_indentation else token.lstrip(
                         ' \t'))
-
             self._add_line(value)
 
         if self._extend:
@@ -412,7 +412,7 @@ class Renderer(object):
         # Break the temp in a steam of tokens
         tokens = (x for x in self._token_splitter_re.split(self._template_str))
 
-        self._token_stream(tokens)
+        self._compile_token_stream(tokens)
 
         if len(self._block_stack) != 0:
             last_token = self._block_stack.pop()
@@ -437,68 +437,45 @@ class Renderer(object):
         except Exception as e:
             six.raise_from(e, None)
 
-    def _compile_context_variable(self, variable, as_string=True):
-        """Convert a context variable reference into a executable access
-
-            Executed at compile time
-            3 cases :
-            1) token is a filtered token
-            2) token is the name of a for loop target variable
-            3) token is dotted name from the context.
-        """
-        variable = variable.strip()
-
-        if self._FILTER_SEP in variable:
-            ret = self._compile_filtered_token(variable)
-        else:
-            if '.' in variable:
-                parts = variable.split('.')
-            else:
-                parts = [variable]
-
-            if parts[0] not in self._targets:
-                self._locals.add(parts[0])
-
-            ret = 'renderer._dodots(token={token!r}, value={value}, parts={parts!r},context=context,as_string={as_string!r})'.format(
-                token=variable,
-                value=parts[0],
-                parts=parts[:],
-                as_string=as_string)
-
-        return ('str(' + ret + ')') if as_string else ret
-
     def _compile_filtered_token(self, token):
         """Compile a context variable access with a filter
 
            Handles filter with and without args
         """
-        # Todo Combine with _compile_context_variable ?
+        variable = token.strip() if not token.startswith('{{') else token[2:-2].strip()
+        if self._FILTER_SEP in variable:
 
-        dotted_name, filter_name = token.split(self._FILTER_SEP)
+            dotted_name, filter_name = variable.split(self._FILTER_SEP)
 
-        # Split off any arguments - working from the first space
-        if ' ' in filter_name:
-            first_space = filter_name.find(' ')
-            filter_name, args = filter_name[:first_space], filter_name[first_space + 1:]
-        else:
-            filter_name, args = filter_name, None
-
-        pargs, kwargs = self._split_args(args) if args else ((), {})
-
-        if filter_name in self.__class__._filters:
-            if '.' in dotted_name:
-                parts = dotted_name.split('.')
-                var = 'renderer._dodots(token={token!r}, value={value}, parts={parts!r} , context=context, as_string=False)'.format(
-                        value=parts[0],
-                        parts=parts[:],
-                        token = token)
+            # Split off any arguments - working from the first space
+            if ' ' in filter_name:
+                first_space = filter_name.find(' ')
+                filter_name, args = filter_name[:first_space], filter_name[first_space + 1:]
             else:
-                parts = [dotted_name]
-                var = dotted_name
+                filter_name, args = filter_name, None
 
-            if parts[0] not in self._targets:
-                self._locals.add(parts[0])
+            pargs, kwargs = self._split_args(args) if args else ((), {})
 
+            if filter_name not in self.__class__._filters:
+                six.raise_from(
+                UnrecognisedFilter('Unknown filter \'{}\''.format(filter_name)),
+                None)
+        else:
+            filter_name = None
+            dotted_name = variable
+            pargs, kwargs = (), {}
+
+        parts = [dotted_name] if '.' not in dotted_name else dotted_name.split('.')
+
+        var = 'renderer._dodots(token={token!r}, value={value}, parts={parts!r} , context=context)'.format(
+                    value=parts[0],
+                    parts=parts[:],
+                    token = token)
+
+        if parts[0] not in self._targets:
+            self._locals.add(parts[0])
+
+        if filter_name is not None:
             return 'renderer.__class__.execute_filter( filter_name={filter_name!r},token={token!r},value={var},args={pargs!r}, kwargs={kwargs!r})'.format(
                 cls_name=self.__class__.__name__,
                 filter_name=filter_name,
@@ -507,13 +484,11 @@ class Renderer(object):
                 pargs=pargs,
                 kwargs=kwargs)
         else:
-            six.raise_from(
-                UnrecognisedFilter('Unknown filter \'{}\''.format(filter_name)),
-                None)
+            return var
 
         # Todo Extend for publicly defined filters ?
 
-    def _dodots(self, token='', value=None, parts=None, as_string=True, context={}):
+    def _dodots(self, token='', value=None, parts=None, context={}):
         """Process a expression - i.e. access to a data item within the context
 
            A wrapper around self._resolvedots so that errors are dealt with as
@@ -527,47 +502,19 @@ class Renderer(object):
            :param as_string: Whether this should return a string of a value - remove ??
            :param context:  The operational context for this template
         """
+        as_string = token.startswith('{{')
+
         # If the first name isn't in the context and isn't in the targets wrap produce a 'default' value
         if parts[0] not in context and parts[0] not in self._targets:
-            return '' if not as_string else (self._default if self._default else '{{' + token + '}}')
+            if self._errors:
+                six.raise_from(UnknownContextValue('Unknown context variable \'{}\''.format(token)),None)
+            else:
+                return '' if not as_string else (self._default if self._default else token)
 
         # Try to resolve any further dotte dess
-        try:
-            result = self._resolvedots(token=token, value=value, parts=parts[1:] if len(parts) > 1 else [])
-        except UnknownContextValue:
-            if self._errors:
-                raise
-            else:
-                if not as_string:
-                    return None
-                return None if not as_string else (self._default if self._default else '{{' + token + '}}')
-        except Exception as e:
-            raise e
-        else:
-            return str(result) if as_string else result
-
-    @staticmethod
-    def _resolvedots(token='', value=None, parts=None):
-        """convert a dotted token into an actual value
-
-           Process a dotted value - where each node is either :
-
-           1) A key to a Mapping of some form
-           2) An attribute name on an object
-           3) A callable on an object
-
-           It is allowed that the attribute or callable need not be the leaf node,
-           so long as the value of the attribute or returned by the callable is valid
-           for the subsequent nodes.
-
-           Called from _dodots/
-           :param token: Used for error reporting - remove ?
-           :param value: The actual starting value
-           :param parts: the dotted parts of the name
-
-           Executed at run-time
-        """
         current_value = value
+
+        parts = parts[1:] if len(parts) > 1 else []
 
         for sub_item in parts:
             if isinstance(current_value, Mapping):
@@ -575,21 +522,23 @@ class Renderer(object):
                     current_value = current_value[sub_item]
                     continue
                 except KeyError:
-                    six.raise_from(UnknownContextValue(
-                        'Unknown context variable \'{}\''.format(
-                            token)), None)
+                    if self._errors:
+                        six.raise_from(UnknownContextValue('Unknown context variable \'{}\''.format(token)),None)
+                    else:
+                        return '' if not as_string else (self._default if self._default else token)
 
             if hasattr(current_value, sub_item):
                 if callable(getattr(current_value, sub_item)):
-                    current_value = str(getattr(current_value, sub_item)())
+                    current_value = getattr(current_value, sub_item)()
                     continue
                 else:
-                    current_value = str(getattr(current_value, sub_item))
+                    current_value = getattr(current_value, sub_item)
                     continue
             else:
-                six.raise_from(UnknownContextValue(
-                    'Unknown context variable \'{}\''.format(
-                        token)), None)
+                if self._errors:
+                    six.raise_from(UnknownContextValue('Unknown context variable \'{}\''.format(token)), None)
+                else:
+                    return '' if not as_string else (self._default if self._default else token)
         else:
             return current_value
 
@@ -624,7 +573,6 @@ class Renderer(object):
         if not self._render:
             return None
         return self._render(self, this_context)
-
 
 @registerModifier('len')
 def variable_length(var, *args, **kwargs):

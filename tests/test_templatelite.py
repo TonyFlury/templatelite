@@ -146,7 +146,7 @@ class Substitutions(unittest.TestCase):
         renderer = templatelite.Renderer(template_str=template, errors=True)
         with six.assertRaisesRegex(self,
                                    templatelite.UnknownContextValue,
-                                    r'Unknown context variable \'person.name\''):
+                                    r'Unknown context variable \'{{person.name}}\''):
             result = renderer.from_context({'person':{'full-name': 'Tony Flury','age':53}})
 
 
@@ -168,7 +168,7 @@ class Filters(unittest.TestCase):
         """Test the Length filter with arguments (in error)"""
         template = 'My name is {{person.name|len 193}}'
         renderer = templatelite.Renderer(template_str=template, errors=True)
-        with six.assertRaisesRegex(self, templatelite.UnexpectedFilterArguments, r"Unexpected filter arguments in 'person.name\|len 193\s*'"):
+        with six.assertRaisesRegex(self, templatelite.UnexpectedFilterArguments, r"Unexpected filter arguments in '{{person.name|len 193}}'"):
             result = renderer.from_context({'person':{'name':'Tony'}})
 
     def test_020_010_split_filter(self):
@@ -189,26 +189,30 @@ class Filters(unittest.TestCase):
         """Test the capitalise filter with default"""
         template = 'My name is {{v|split e b}}'
         renderer = templatelite.Renderer(template_str=template, errors=True)
-        with six.assertRaisesRegex(self, templatelite.UnexpectedFilterArguments, r"Unexpected filter arguments in 'v\|split e b\s*'"):
+        with six.assertRaisesRegex(self, templatelite.UnexpectedFilterArguments, r"Unexpected filter arguments in \'{{v|split e b}}\'"):
             renderer.from_context({'v':'Hello'})
 
 class IfStatement(unittest.TestCase):
     def test_030_000_invalid_if_missing_expression(self):
+        """Invalid if statement - missing an expression"""
         template = """{% if %}"""
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Invalid if statement \'\{% if %\}\'"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_001_invalid_if_missing_endif(self):
+        """Invalid template missing endif"""
         template = """{% if True %}"""
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Missing directive \'{% endif %}\'"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_002_invalid_lone_else(self):
+        """Invalid template - else without and if or for"""
         template = """{% else %}"""
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% else %}\' outside {% if %} or {% for %} block"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_003_invalid_lone_else(self):
+        """Invalid template - else after another else"""
         template = """{% if True %}
 Hello
 {% else %}
@@ -218,6 +222,7 @@ Goodbye
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_004_invalid_lone_elif(self):
+        """Invalid template - elif without a starting if"""
         template = """{% elif True %}
         {% endif %}"""
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError,
@@ -225,6 +230,7 @@ Goodbye
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_005_invalid_elif(self):
+        """Invalid template - elif without an expression"""
         template = """{% if True %}
         {% elif %}
         {% endif %}"""
@@ -233,18 +239,21 @@ Goodbye
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_006_invalid_if_expression(self):
+        """Invalid expression - Syntax Error"""
         template = """{% if True+ %}
         {% endif %}"""
         with self.assertRaises(SyntaxError):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_005_invalid_endif(self):
+        """Invalid template - endif without if statement"""
         template = """{% endif %}"""
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError,
                                    r"Syntax Error : Unexpected directive - found \'{% endif %}\' outside an \'{% if %}\' block"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_030_010_valid_if_endif(self):
+        """Valid template - if with endif"""
         template = """{% if dummy %}
         Hello
         {% endif %}"""
@@ -253,6 +262,7 @@ Goodbye
         self.assertEqual(result, '')
 
     def test_030_011_valid_with_else(self):
+        """Valid template - if else endif"""
         template = """{% if dummy %}
 Hello
 {% else %}
@@ -265,6 +275,7 @@ Goodbye
         self.assertEqual(result,'Goodbye\n')
 
     def test_030_012_valid_with_elif(self):
+        """Valid template - if elif endif"""
         template = """{% if dummy==1 %}
 Hello
 {% elif dummy==2 %}
@@ -277,6 +288,7 @@ Goodbye
         self.assertEqual(result,'Goodbye\n')
 
     def test_030_013_elif_with_else(self):
+        """Valid template - if elif else endif"""
         template = """{% if dummy==1 %}
 Hello
 {% elif dummy==2 %}
@@ -290,6 +302,7 @@ Au Revoir
         self.assertEqual(renderer.from_context({'dummy':3}),'Au Revoir\n')
 
     def test_030_020_if_with_in(self):
+        """Valid template - if with an 'in' test - ensure neither in or quoted strings are 'compiled' """
         template = """{% if data in ['a','b','c'] %}
         Hello
         {% elif data in ['d','e','f'] %}
@@ -307,6 +320,7 @@ Au Revoir
         self.assertEqual(renderer.from_context({'data':'other'}),'Au Revoir\n')
 
     def test_030_030_expression_substitution_index(self):
+        """Valid template - with compiled names within indexes """
         template = """{% if data[key1] == data[key2] %}
         The same
         {% else %}
@@ -317,6 +331,7 @@ Au Revoir
         self.assertEqual(renderer.from_context({'data':[1,2,3,3,4],'key1':0,'key2':1}),'Different\n')
 
     def test_030_035_expression_substitution_key(self):
+        """Valid template - with compiled names as dictionary keys """
         template = """{% if data[key1] == data[key2] %}
         The same
         {% else %}
@@ -327,6 +342,7 @@ Au Revoir
         self.assertEqual(renderer.from_context({'data':{1:1,2:2,3:3,4:3,5:4},'key1':1,'key2':5}),'Different\n')
 
     def test_030_035_expression_functioncall(self):
+        """Valid template - with explicit function call - with parameters """
         def func(n):
             return 0 if n >5  else 1
 
@@ -342,41 +358,49 @@ Au Revoir
 
 class ForLoop(unittest.TestCase):
     def test_040_000_invalid_for_loop_missing_itervar(self):
+        """Invalid for loop - missing targets and iterable"""
         template = '{% for %}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Invalid for statement \'\{% for %\}\'"):
             renderer = templatelite.Renderer(template_str=template)
 
-    def test_040_001_invalid_for_loop_missing_in(self):
+    def test_040_001_invalid_for_loop_missing_iterator(self):
+        """Invalid for loop - missing iterable"""
         template = '{% for plip in %}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Invalid for statement \'\{% for plip in %\}\'"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_040_002_invalid_for_loop_invalid_single_target(self):
+        """Invalid for loop - invalid target"""
         template = '{% for plip.x in dummy%}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Invalid target in for loop \'plip.x\'"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_040_003_invalid_for_loop_invalid_multple_target(self):
+        """Invalid for loop - one invalid target"""
         template = '{% for z, plip.x in dummy%}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Invalid target in for loop \'plip.x\'"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_040_004_invalid_for_loop_missing_end_for(self):
+        """Invalid for loop - missing endfor"""
         template = '{% for z, plip in dummy%}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Missing directive \'{% endfor %}\'"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_040_005_break_outside_loop(self):
+        """Invalid for loop - break outside a loop"""
         template = '{% break %}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% break %}\' outside \'{% for %}\' block"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_040_006_coontinue_outside_loop(self):
+        """Invalid for loop - continue outside a loop"""
         template = '{% continue %}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% continue %}\' outside \'{% for %}\' block"):
             renderer = templatelite.Renderer(template_str=template)
 
     def test_040_006_endfor_outside_loop(self):
+        """Invalid for loop - endfor outside a loop"""
         template = '{% endfor %}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% endfor %}\' outside \'{% for %}\' block"):
             renderer = templatelite.Renderer(template_str=template)
@@ -433,6 +457,7 @@ outer block
     outer block""")
 
     def test_040_021_for_with_continue(self):
+        """For loop with a continue"""
         template = \
             """{% for n in dummy%}
                 {% if n ==3 %}
@@ -444,6 +469,7 @@ outer block
         self.assertEqual('1\n2\n4\n5', renderer.from_context({'dummy': [1,2,3,4,5]}).strip())
 
     def test_040_022_for_with_else(self):
+        """For loop with a else"""
         template = \
             """{% for n in dummy%}
                 {% if n ==3 %}
@@ -457,6 +483,7 @@ outer block
         self.assertEqual('Not Found !', renderer.from_context({'dummy': [1,2,4,5]}).strip())
 
     def test_040_030_filter_on_for_loop_target(self):
+        """For looop - filter used on loop target variable"""
         template = """{% for n in dummy%}
         {{ n|len }}
             {% endfor %}"""
@@ -464,6 +491,7 @@ outer block
         self.assertEqual('0\n1\n2\n3\n4', renderer.from_context({'dummy': ['','1','22','333','4444']}).strip())
 
     def test_040_040_for_loop_variable_error(self):
+        """For looop - error fetching iterator"""
         template = """{% for n in doesnt_exist %}
 inside loop
             {% endfor %}"""
@@ -475,6 +503,7 @@ inside loop
 class ErrorConditions(unittest.TestCase):
 
     def test_100_000_invalid_directive(self):
+        """Invalid Template - unknown directive token"""
         template = """{% frooble %}"""
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r'Syntax Error : Unexpected directive \'{% frooble %}\' found'):
             renderer = templatelite.Renderer(template_str=template)
