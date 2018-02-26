@@ -119,7 +119,9 @@ class Renderer(object):
             with open(template_file, 'r') as fp:
                 template_str = fp.read()
         else:
-            self._template_str = template_str if template_str else ''
+            template_str = template_str if template_str else ''
+
+        self._template_str = template_str
 
         if not self._template_str:
             six.raise_from(ValueError('Template cannot be blank/empty'), None)

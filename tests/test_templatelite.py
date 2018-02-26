@@ -34,13 +34,13 @@ class SimpleTextAndComments(unittest.TestCase):
 
     def test_000_001_instatiation(self):
         """instantiate a Rendered instance"""
-        renderer = templatelite.Renderer()
+        renderer = templatelite.Renderer(template_str='b')
         self.assertIsInstance(renderer, templatelite.Renderer)
 
     def test_000_002_no_text(self):
         """Empty Template creates empty results"""
-        renderer = templatelite.Renderer()
-        self.assertEqual('', renderer.from_context({}))
+        with self.assertRaises(ValueError):
+            renderer = templatelite.Renderer()
 
     def test_000_003_comment_only(self):
         """Single comment is ignored"""
