@@ -10,3 +10,4 @@ htmlcov/**
 templatelite.egg-info/**
 .eggs/**
 coverage_html_report/**
+.coverage
