@@ -301,6 +301,14 @@ Au Revoir
         self.assertEqual(renderer.from_context({'dummy':2}),'Goodbye\n')
         self.assertEqual(renderer.from_context({'dummy':3}),'Au Revoir\n')
 
+    def test_030_015_if_on_one_line(self):
+        """Valid template - if elif else endif"""
+        template = "{% if dummy==1 %} Hello {% elif dummy==2 %} Goodbye {% else %} Au Revoir {% endif %}"
+        renderer = templatelite.Renderer(template_str=template)
+        self.assertEqual(renderer.from_context({'dummy': 1}), 'Hello')
+        self.assertEqual(renderer.from_context({'dummy': 2}), 'Goodbye')
+        self.assertEqual(renderer.from_context({'dummy': 3}), 'Au Revoir')
+
     def test_030_020_if_with_in(self):
         """Valid template - if with an 'in' test - ensure neither in or quoted strings are 'compiled' """
         template = """{% if data in ['a','b','c'] %}
@@ -341,7 +349,7 @@ Au Revoir
         self.assertEqual(renderer.from_context({'data':{1:1,2:2,3:3,4:3,5:4},'key1':3,'key2':4}),'The same\n')
         self.assertEqual(renderer.from_context({'data':{1:1,2:2,3:3,4:3,5:4},'key1':1,'key2':5}),'Different\n')
 
-    def test_030_035_expression_functioncall(self):
+    def test_030_037_expression_functioncall(self):
         """Valid template - with explicit function call - with parameters """
         def func(n):
             return 0 if n >5  else 1
@@ -383,7 +391,7 @@ class ForLoop(unittest.TestCase):
 
     def test_040_004_invalid_for_loop_missing_end_for(self):
         """Invalid for loop - missing endfor"""
-        template = '{% for z, plip in dummy%}'
+        template = '{% for z, plip in dummy %}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Missing directive \'{% endfor %}\'"):
             renderer = templatelite.Renderer(template_str=template)
 
@@ -393,7 +401,7 @@ class ForLoop(unittest.TestCase):
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% break %}\' outside \'{% for %}\' block"):
             renderer = templatelite.Renderer(template_str=template)
 
-    def test_040_006_coontinue_outside_loop(self):
+    def test_040_006_continue_outside_loop(self):
         """Invalid for loop - continue outside a loop"""
         template = '{% continue %}'
         with six.assertRaisesRegex(self, templatelite.TemplateSyntaxError, r"Syntax Error : Unexpected directive - found \'{% continue %}\' outside \'{% for %}\' block"):
@@ -490,6 +498,30 @@ outer block
         renderer = templatelite.Renderer(template_str=template, remove_indentation=True)
         self.assertEqual('0\n1\n2\n3\n4', renderer.from_context({'dummy': ['','1','22','333','4444']}).strip())
 
+    def test_040_031_for_loop_target(self):
+        """For looop - filter used on loop target variable"""
+        template = """{% for n in dummy%}
+        {{ n }}
+            {% endfor %}"""
+        renderer = templatelite.Renderer(template_str=template, remove_indentation=True)
+        self.assertEqual('0\n1\n2\n3\n4', renderer.from_context({'dummy': ['0','1','2','3','4']}).strip())
+
+    def test_040_031_for_loop_indentation_intact(self):
+        """For looop - filter used on loop target variable"""
+        template = """{% for n in dummy%}
+    {{ n }}
+            {% endfor %}"""
+        renderer = templatelite.Renderer(template_str=template, remove_indentation=False)
+        self.assertEqual('    0\n    1\n    2\n    3\n    4\n', renderer.from_context({'dummy': ['0','1','2','3','4']}))
+
+    def test_040_032_multiple_for_loop_target(self):
+        """For looop - filter used on loop target variable"""
+        template = """{% for n,r in dummy%}
+        {{ n }} : {{ r }}
+            {% endfor %}"""
+        renderer = templatelite.Renderer(template_str=template)
+        self.assertEqual('0: a\n1: b\n2: c\n3: d\n4: e', renderer.from_context({'dummy': zip([0,1,2,3,4],['a','b','c','d','e'])}).strip())
+
     def test_040_040_for_loop_variable_error(self):
         """For looop - error fetching iterator"""
         template = """{% for n in doesnt_exist %}
@@ -499,6 +531,12 @@ inside loop
                                          remove_indentation=True)
         self.assertEqual('', renderer.from_context({}).strip())
 
+    def test_040_045_for_loop_variable_singleline(self):
+        """For loop - for loop on a single line"""
+        template = "{% for n in l %} {{ n }} {% endfor %}"
+        renderer = templatelite.Renderer(template_str=template,
+                                         remove_indentation=True)
+        self.assertEqual('0123456', renderer.from_context({'l':[0,1,2,3,4,5,6]}).strip())
 
 class ErrorConditions(unittest.TestCase):
 

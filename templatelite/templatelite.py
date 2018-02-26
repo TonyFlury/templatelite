@@ -79,7 +79,7 @@ class Renderer(object):
         where any indentation is inconsequential (e.g. html). If the template is intended to create output where indentation needs to be preserved (Restructured Text (.rst), Python Source Code (.py) then ``remove_indentation`` needs to set to false).
     """
     # Split template into tokens surrounded by {{ }}, {% %}, or {# #}
-    _token_splitter_re = re.compile(r'({{.*?}}|[ \t]*{%.*?%}\n|{#.*?#}|\n)',
+    _token_splitter_re = re.compile(r'({{.*?}}|[ \t]*{%.*?%}|{#.*?#}|)',
                                     flags=re.DOTALL)
 
     # Split arguments out for filters
@@ -88,9 +88,9 @@ class Renderer(object):
 
     # Parse the target and iterables for a for loop, if statement and if else
     _for_parse_re = re.compile(
-        r"^for\s+?(?P<target>.+)\s+?in\s+(?P<iterable>.+)$")
-    _if_parse_re = re.compile(r'if\s+?(?P<expression>.+)$')
-    _elif_parse_re = re.compile(r'elif\s+?(?P<expression>.+)$')
+        r"^for\s+?(?P<target>.+)\s+?in\s+(?P<iterable>.+?)(%})")
+    _if_parse_re = re.compile(r'if\s+?(?P<expression>.+?)(%})')
+    _elif_parse_re = re.compile(r'elif\s+?(?P<expression>.+?)(%})')
 
     # Find variables within expressions - name.name.name|name is valid
     _variable_re = re.compile(
@@ -187,7 +187,7 @@ class Renderer(object):
         m = self._if_parse_re.match(statement_token)
         if not m:
             six.raise_from(TemplateSyntaxError(
-                'Syntax Error : Invalid if statement \'{{% {} %}}\''.format(
+                'Syntax Error : Invalid if statement \'{{% {}\''.format(
                     statement_token)), None)
         expression = self._compile_expression(m.group('expression'))
         self._block_stack.append(('if', None))
@@ -215,7 +215,7 @@ class Renderer(object):
         m = self._elif_parse_re.match(statement_token)
         if not m:
             six.raise_from(TemplateSyntaxError(
-                'Syntax Error : Invalid elif statement \'{{% {} %}}\''.format(
+                'Syntax Error : Invalid elif statement \'{{% {}\''.format(
                     statement_token)), None)
         expression = self._compile_expression(m.group('expression'))
         self._block_stack.append(('elif', None))
@@ -282,7 +282,7 @@ class Renderer(object):
         m = self._for_parse_re.match(for_statement_token)
         if not m:
             six.raise_from(TemplateSyntaxError(
-                'Syntax Error : Invalid for statement \'{{% {} %}}\''.format(
+                'Syntax Error : Invalid for statement \'{{% {}\''.format(
                     for_statement_token)), None)
 
         targets = m.group('target').split(',')
@@ -333,6 +333,7 @@ class Renderer(object):
     def _compile_token_stream(self, token_stream):
         """Compile the main chunk of the template
         """
+        last_token_directive = False
 
         # Simple jump table - no locations but consistent names is important
         command_jmp_table = {'for','endfor','if','elif','else','endif'}
@@ -344,43 +345,52 @@ class Renderer(object):
         self._start_block()
         self._extend = False
         for token in token_stream:
-
             if not token:
                 continue
 
             if token.startswith('{#'):
                 continue
 
-            inner_token = token.strip()[2:-2].strip()
-
             if token.strip().startswith('{%'):
+                last_token_directive = True
+                inner_token = token.strip()[2:].strip()
+
                 command = inner_token.split()[0]
 
                 if command in command_jmp_table:
                     getattr(self, '_compile_'+command)(inner_token)
                     continue
 
-                if inner_token in ['break', 'continue']:
+                if inner_token[:-2].strip() in ['break', 'continue']:
                     if ('for', None) not in self._block_stack:
                         six.raise_from(TemplateSyntaxError(
                             'Syntax Error : Unexpected directive - found \'{token}\' outside \'{{% for %}}\' block'.format(
                                 token=token)), None)
                     self._end_block()
-                    self._block_source.append(' ' * self._indent + inner_token + '\n')
+                    self._block_source.append(' ' * self._indent + inner_token[:-2].strip() + '\n')
                     continue
 
                 six.raise_from(TemplateSyntaxError(
-                    'Syntax Error : Unexpected directive \'{{% {} %}}\' found'.format(
+                    'Syntax Error : Unexpected directive \'{{% {}\' found'.format(
                         inner_token)), None)
 
             if token.startswith('{{'):
+                inner_token = token.strip()[2:-2].strip()
                 value = 'str({})'.format(self._compile_filtered_token(token))
+                self._add_line(value)
 
             else:
-                value = repr(
-                    token if not self._ignore_indentation else token.lstrip(
-                        ' \t'))
-            self._add_line(value)
+                # All '\n in must be preserved apart from the first one (after a directive)
+                # All left indentation (after a \n) must be removed
+                lines = token.splitlines(True)
+                for line in lines:
+                    if line == '\n' and last_token_directive:
+                        last_token_directive = False
+                        continue
+
+                    token = line if not self._ignore_indentation else line.lstrip(' \t')
+
+                    self._add_line(repr(token))
 
         if self._extend:
             self._block_source.append('])\n')
