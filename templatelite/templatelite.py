@@ -122,7 +122,7 @@ class Renderer(object):
             self._template_str = template_str if template_str else ''
 
         if not self._template_str:
-            six.raise_from()
+            six.raise_from(ValueError('Template cannot be blank/empty'), None)
 
         self._indent = 4
         self._extend = False
