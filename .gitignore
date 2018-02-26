@@ -8,3 +8,5 @@ docs/_static/**
 docs/_templates/**
 htmlcov/**
 templatelite.egg-info/**
+.eggs/**
+coverage_html_report/**
