@@ -100,7 +100,10 @@ class Renderer(object):
 
     _FILTER_SEP = '|'
 
-    def __init__(self, template_str=None, errors=False, default=None,
+    def __init__(self, template_str=None,
+                 template_fp=None,
+                 template_file = '',
+                 errors=False, default=None,
                  remove_indentation=True):
         """A General purpose Template renderer
 
@@ -110,13 +113,23 @@ class Renderer(object):
             :param default: The default value to insert into the template if an error
                         occurs. If None the
         """
+        if template_fp:
+            template_str = template_fp.read()
+        elif template_file:
+            with open(template_file, 'r') as fp:
+                template_str = fp.read()
+        else:
+            self._template_str = template_str if template_str else ''
+
+        if not self._template_str:
+            six.raise_from()
+
         self._indent = 4
         self._extend = False
         self._source_parts = []
         self._source = None
         self._errors = errors
 
-        self._template_str = template_str if template_str else ''
         self._errors = errors
         self._ignore_indentation = remove_indentation
         self._default = default
