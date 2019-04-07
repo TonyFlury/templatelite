@@ -55,8 +55,7 @@ and this is mo{# no whitespace inserted #}re text
 {#Final comment #}This is it."""
         renderer = templatelite.Renderer(template)
         self.assertEqual( renderer.from_context(),
-"""This is text 
-and this is more text
+"""This is text and this is more text
 This is it.""" )
 
 

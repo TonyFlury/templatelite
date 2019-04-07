@@ -364,6 +364,7 @@ class Renderer(object):
                 continue
 
             if token.startswith('{#'):
+                last_token_directive = True
                 continue
 
             if token.strip().startswith('{%'):
