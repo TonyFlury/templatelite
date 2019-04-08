@@ -471,7 +471,9 @@ class Renderer(object):
         variable = token.strip() if not token.startswith('{{') else token[2:-2].strip()
         if self._FILTER_SEP in variable:
 
+            # Split toekn in contexxt variable and filter details
             dotted_name, filter_name = variable.split(self._FILTER_SEP)
+            dotted_name, filter_name = dotted_name.rstrip(), filter_name.lstrip()
 
             # Split off any arguments - working from the first space
             if ' ' in filter_name:
@@ -576,9 +578,9 @@ class Renderer(object):
         """
         matches = [m for m in Renderer._split_args_re.finditer(args)]
         p_args = tuple(
-            [m.group('value') for m in matches if m.group('keyword') is None])
+            [m.group('value').strip("\'") for m in matches if m.group('keyword') is None])
         kw_args = dict(
-            [(m.group('keyword'), str(m.group('value'))) for m in matches if
+            [(m.group('keyword'), str(m.group('value').strip("\'"))) for m in matches if
              m.group('keyword') is not None])
         return p_args, kw_args
 
@@ -618,7 +620,7 @@ def variable_split(var, *args, **kwargs):
 
 @registerModifier('cut')
 def variable_cut(var, *args, **kwargs):
-    """Returns a compiled call to capitalize"""
+    """Returns a compiled call to the cut filter"""
     if 0 > len(args) > 1 or kwargs:
         raise UnexpectedFilterArguments
     return str(var).replace(args[0], '')

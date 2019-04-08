@@ -171,14 +171,14 @@ class Filters(unittest.TestCase):
             result = renderer.from_context({'person':{'name':'Tony'}})
 
     def test_020_010_split_filter(self):
-        """Test the capitalise filter with default"""
+        """Test the split filter with default"""
         template = 'My name is {{person.name|split}}'
         renderer = templatelite.Renderer(template_str=template, errors=True)
         result = renderer.from_context({'person':{'name': 'tony flury','age':53}})
         self.assertEqual(result, 'My name is [\'tony\', \'flury\']')
 
     def test_020_011_split_filter_argument(self):
-        """Test the capitalise filter with default"""
+        """Test the split filter with argument"""
         template = 'My name is {{v|split e}}'
         renderer = templatelite.Renderer(template_str=template, errors=True)
         result = renderer.from_context({'v':'1e2e3e4e5e6e7e8e9e0'})
