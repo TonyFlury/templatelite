@@ -45,7 +45,7 @@ class SimpleTextAndComments(unittest.TestCase):
     def test_000_003_comment_only(self):
         """Single comment is ignored"""
         renderer = templatelite.Renderer('{# This should be ignored #}')
-        self.assertEqual('', renderer.from_context({}))
+        self.assertEqual( renderer.from_context({}), '')
 
     def test_000_004_comments_embedded_in_text_only(self):
         """Text with embedded comments"""
@@ -66,21 +66,21 @@ class Substitutions(unittest.TestCase):
         template = 'My name is {{ name }}'
         renderer = templatelite.Renderer(template_str=template)
         result = renderer.from_context({'name':'Tony Flury'})
-        self.assertEqual(result, 'My name is Tony Flury')
+        self.assertEqual( result, 'My name is Tony Flury')
 
     def test_010_002_SimpleContextWithExtaWhiteSpace(self):
         """Simple template with extra white space around context name"""
         template = 'My name is {{      name       }}'
         renderer = templatelite.Renderer(template_str=template)
         result = renderer.from_context({'name':'Tony Flury'})
-        self.assertEqual(result, 'My name is Tony Flury')
+        self.assertEqual( result, 'My name is Tony Flury')
 
     def test_010_033_MissingContextValue(self):
         """Missing context data - default value"""
         template = 'My name is {{name}}'
         renderer = templatelite.Renderer(template_str=template)
         result = renderer.from_context({'me':'Tony Flury'})
-        self.assertEqual(result, 'My name is {{name}}')
+        self.assertEqual( result, 'My name is {{name}}')
 
     def test_010_033_MissingContextValueError(self):
         """Missing context data - error raised"""
@@ -96,7 +96,7 @@ class Substitutions(unittest.TestCase):
         template = 'My name is {{name}}'
         renderer = templatelite.Renderer(template_str=template, default='!!Error!!')
         result = renderer.from_context({'me': 'Tony Flury'})
-        self.assertEqual(result, 'My name is !!Error!!')
+        self.assertEqual( result, 'My name is !!Error!!')
 
     def test_010_040_DottedNameDictionary(self):
         """Context variable is a dictionary with a dotted name in template"""
@@ -104,7 +104,7 @@ class Substitutions(unittest.TestCase):
         renderer = templatelite.Renderer(template_str=template,
                                         default='!!Error!!')
         result = renderer.from_context({'person':{'name': 'Tony Flury','age':53}})
-        self.assertEqual(result, 'My name is Tony Flury')
+        self.assertEqual( result, 'My name is Tony Flury')
 
     def test_010_041_DottedNameAttribute(self):
         """Context variable is an object with a dotted attribute name in template"""
@@ -114,7 +114,7 @@ class Substitutions(unittest.TestCase):
         renderer = templatelite.Renderer(template_str=template,
                                         default='!!Error!!')
         result = renderer.from_context({'person':c})
-        self.assertEqual(result, 'My name is Tony')
+        self.assertEqual( result, 'My name is Tony')
 
     def test_010_041_DottedNameCallable(self):
         """Context variable is a object with a callable name in template"""
@@ -122,7 +122,7 @@ class Substitutions(unittest.TestCase):
         renderer = templatelite.Renderer(template_str=template,
                                         default='!!Error!!')
         result = renderer.from_context({'person':'Tony'})
-        self.assertEqual(result, 'My name is 4')
+        self.assertEqual( result, 'My name is 4')
 
     def test_010_050_DottedNameDictionaryMissingKeyDefaultValue(self):
         """Context variable is a dictionary with a with a missing key replaced by the default value"""
@@ -130,14 +130,14 @@ class Substitutions(unittest.TestCase):
         renderer = templatelite.Renderer(template_str=template,
                                         default='!!Error!!')
         result = renderer.from_context({'person':{'full-name': 'Tony Flury','age':53}})
-        self.assertEqual(result, 'My name is !!Error!!')
+        self.assertEqual( result, 'My name is !!Error!!')
 
     def test_010_051_DottedNameDictionaryMissingKeyNoDefault(self):
         """Context variable is a dictionary with a with a missing key replace by token"""
         template = 'My name is {{person.name}}'
         renderer = templatelite.Renderer(template_str=template)
         result = renderer.from_context({'person':{'full-name': 'Tony Flury','age':53}})
-        self.assertEqual(result, 'My name is {{person.name}}')
+        self.assertEqual( result, 'My name is {{person.name}}')
 
     def test_010_052_DottedNameDictionaryMissingKeyError(self):
         """Context variable is a dictionary with a with a missing key raises Exception"""
@@ -161,7 +161,7 @@ class Filters(unittest.TestCase):
         template = 'My name is {{person.name|len}}'
         renderer = templatelite.Renderer(template_str=template, errors=True)
         result = renderer.from_context({'person':{'name': 'Tony Flury','age':53}})
-        self.assertEqual(result, 'My name is 10')
+        self.assertEqual( result, 'My name is 10')
 
     def test_020_002e_length_filter_with_args(self):
         """Test the Length filter with arguments (in error)"""
@@ -182,7 +182,7 @@ class Filters(unittest.TestCase):
         template = 'My name is {{v|split e}}'
         renderer = templatelite.Renderer(template_str=template, errors=True)
         result = renderer.from_context({'v':'1e2e3e4e5e6e7e8e9e0'})
-        self.assertEqual(result, "My name is ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']")
+        self.assertEqual( result, "My name is ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']" )
 
     def test_020_012_split_filter_error(self):
         """Test the capitalise filter with default"""
@@ -269,9 +269,9 @@ Goodbye
 {% endif %}"""
         renderer = templatelite.Renderer(template_str=template)
         result = renderer.from_context({'dummy':True})
-        self.assertEqual(result,'Hello\n')
+        self.assertEqual( result, 'Hello\n')
         result = renderer.from_context({'dummy':False})
-        self.assertEqual(result,'Goodbye\n')
+        self.assertEqual( result, 'Goodbye\n')
 
     def test_030_012_valid_with_elif(self):
         """Valid template - if elif endif"""
@@ -282,9 +282,9 @@ Goodbye
 {% endif %}"""
         renderer = templatelite.Renderer(template_str=template)
         result = renderer.from_context({'dummy':1})
-        self.assertEqual(result,'Hello\n')
+        self.assertEqual( result, 'Hello\n')
         result = renderer.from_context({'dummy':2})
-        self.assertEqual(result,'Goodbye\n')
+        self.assertEqual( result, 'Goodbye\n')
 
     def test_030_013_elif_with_else(self):
         """Valid template - if elif else endif"""
@@ -296,7 +296,7 @@ Goodbye
 Au Revoir
 {% endif %}"""
         renderer = templatelite.Renderer(template_str=template)
-        self.assertEqual(renderer.from_context({'dummy':1}),'Hello\n')
+        self.assertEqual( renderer.from_context({'dummy':1}), 'Hello\n')
         self.assertEqual(renderer.from_context({'dummy':2}),'Goodbye\n')
         self.assertEqual(renderer.from_context({'dummy':3}),'Au Revoir\n')
 
@@ -473,7 +473,7 @@ outer block
 {{ n }}
                 {% endfor %}"""
         renderer = templatelite.Renderer(template_str=template, remove_indentation=False)
-        self.assertEqual('1\n2\n4\n5', renderer.from_context({'dummy': [1,2,3,4,5]}).strip())
+        self.assertEqual( renderer.from_context({'dummy': [1,2,3,4,5]}).strip(), '1\n2\n4\n5')
 
     def test_040_022_for_with_else(self):
         """For loop with a else"""
@@ -486,8 +486,8 @@ outer block
             Not Found !
             {% endfor %}"""
         renderer = templatelite.Renderer(template_str=template, remove_indentation=False)
-        self.assertEqual('', renderer.from_context({'dummy': [1,2,3,4,5]}).strip())
-        self.assertEqual('Not Found !', renderer.from_context({'dummy': [1,2,4,5]}).strip())
+        self.assertEqual( renderer.from_context({'dummy': [1,2,3,4,5]}).strip(), '')
+        self.assertEqual( renderer.from_context({'dummy': [1,2,4,5]}).strip(), 'Not Found !')
 
     def test_040_030_filter_on_for_loop_target(self):
         """For looop - filter used on loop target variable"""
@@ -495,7 +495,7 @@ outer block
         {{ n|len }}
             {% endfor %}"""
         renderer = templatelite.Renderer(template_str=template, remove_indentation=True)
-        self.assertEqual('0\n1\n2\n3\n4', renderer.from_context({'dummy': ['','1','22','333','4444']}).strip())
+        self.assertEqual( renderer.from_context({'dummy': ['','1','22','333','4444']}).strip(), '0\n1\n2\n3\n4')
 
     def test_040_031_for_loop_target(self):
         """For looop - filter used on loop target variable"""
@@ -503,7 +503,7 @@ outer block
         {{ n }}
             {% endfor %}"""
         renderer = templatelite.Renderer(template_str=template, remove_indentation=True)
-        self.assertEqual('0\n1\n2\n3\n4', renderer.from_context({'dummy': ['0','1','2','3','4']}).strip())
+        self.assertEqual( renderer.from_context({'dummy': ['0','1','2','3','4']}).strip(), '0\n1\n2\n3\n4')
 
     def test_040_031_for_loop_indentation_intact(self):
         """For looop - filter used on loop target variable"""
@@ -511,7 +511,7 @@ outer block
     {{ n }}
             {% endfor %}"""
         renderer = templatelite.Renderer(template_str=template, remove_indentation=False)
-        self.assertEqual('    0\n    1\n    2\n    3\n    4\n', renderer.from_context({'dummy': ['0','1','2','3','4']}))
+        self.assertEqual( renderer.from_context({'dummy': ['0','1','2','3','4']}), '    0\n    1\n    2\n    3\n    4\n')
 
     def test_040_032_multiple_for_loop_target(self):
         """For looop - filter used on loop target variable"""
@@ -519,7 +519,7 @@ outer block
         {{ n }} : {{ r }}
             {% endfor %}"""
         renderer = templatelite.Renderer(template_str=template)
-        self.assertEqual('0: a\n1: b\n2: c\n3: d\n4: e', renderer.from_context({'dummy': zip([0,1,2,3,4],['a','b','c','d','e'])}).strip())
+        self.assertEqual( renderer.from_context({'dummy': zip([0,1,2,3,4],['a','b','c','d','e'])}).strip(), '0: a\n1: b\n2: c\n3: d\n4: e')
 
     def test_040_040_for_loop_variable_error(self):
         """For looop - error fetching iterator"""
@@ -528,14 +528,14 @@ inside loop
             {% endfor %}"""
         renderer = templatelite.Renderer(template_str=template,
                                          remove_indentation=True)
-        self.assertEqual('', renderer.from_context({}).strip())
+        self.assertEqual( renderer.from_context({}).strip(),'')
 
     def test_040_045_for_loop_variable_singleline(self):
         """For loop - for loop on a single line"""
         template = "{% for n in l %} {{ n }} {% endfor %}"
         renderer = templatelite.Renderer(template_str=template,
                                          remove_indentation=True)
-        self.assertEqual('0123456', renderer.from_context({'l':[0,1,2,3,4,5,6]}).strip())
+        self.assertEqual( renderer.from_context({'l':[0,1,2,3,4,5,6]}).strip(), '0123456')
 
 class ErrorConditions(unittest.TestCase):
 

@@ -83,8 +83,10 @@ class Renderer(object):
                                     flags=re.DOTALL)
 
     # Split arguments out for filters
-    _split_args_re = re.compile(
-        r"(?P<keyword>[a-zA-Z]\w*?:)?(?P<value>((\'.*?\')|((?<!\')[^:]+?))(?=\s|$))")
+    _split_args_re = re.compile( r"(?P<keyword>[a-zA-Z]\w*?:)?"
+                                 r"(?P<value>((\'.*?\')|"
+                                 r"((?<!\')[^:]+?))"
+                                 r"(?=\s|$))")
 
     # Parse the target and iterables for a for loop, if statement and if else
     _for_parse_re = re.compile(
@@ -93,8 +95,10 @@ class Renderer(object):
     _elif_parse_re = re.compile(r'elif\s+?(?P<expression>.+?)(%})')
 
     # Find variables within expressions - name.name.name|name is valid
-    _variable_re = re.compile(
-        r'\b(?P<Variable>(?<!\'>)([a-zA-Z]\w*)(\.[a-zA-Z]\w*)*([|][a-zA-Z]\w*)?(?!\')(?=\W|$))')
+    _variable_re = re.compile( r'\b(?P<Variable>(?<!\'>)'
+                               r'([a-zA-Z]\w*)(\.[a-zA-Z]\w*)*'
+                               r'([|][a-zA-Z]\w*)?(?!\')(?=\W|$)'
+                               r')')
 
     _filters = {}
 
