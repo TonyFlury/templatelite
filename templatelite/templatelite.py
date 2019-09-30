@@ -79,8 +79,14 @@ class Renderer(object):
         where any indentation is inconsequential (e.g. html). If the template is intended to create output where indentation needs to be preserved (Restructured Text (.rst), Python Source Code (.py) then ``remove_indentation`` needs to set to false).
     """
     # Split template into tokens surrounded by {{ }}, {% %}, or {# #}
-    _token_splitter_re = re.compile(r'({{.*?}}|[ \t]*{%.*?%}|{#.*?#}|)',
+    _token_splitter_re = re.compile( r'({{.*?}}|[ \t]*{%.*?%}|{#.*?#})',
                                     flags=re.DOTALL)
+#    _token_splitter_re = re.compile(r'(?x)'
+#                                    r'({{.*?}}|                 # Match command tag'
+#                                    r'[ \t]*{%.*?%}|            # Match variable replacement'
+#                                    r'{\#.*?\#}                 # Match comments'
+#                                    r')',
+#                                    flags=re.DOTALL)
 
     # Split arguments out for filters
     _split_args_re = re.compile( r"(?P<keyword>[a-zA-Z]\w*?:)?"
