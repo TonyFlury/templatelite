@@ -79,12 +79,20 @@ class Renderer(object):
         where any indentation is inconsequential (e.g. html). If the template is intended to create output where indentation needs to be preserved (Restructured Text (.rst), Python Source Code (.py) then ``remove_indentation`` needs to set to false).
     """
     # Split template into tokens surrounded by {{ }}, {% %}, or {# #}
-    _token_splitter_re = re.compile(r'({{.*?}}|[ \t]*{%.*?%}|{#.*?#}|)',
+    _token_splitter_re = re.compile( r'({{.*?}}|[ \t]*{%.*?%}|{#.*?#})',
                                     flags=re.DOTALL)
+#    _token_splitter_re = re.compile(r'(?x)'
+#                                    r'({{.*?}}|                 # Match command tag'
+#                                    r'[ \t]*{%.*?%}|            # Match variable replacement'
+#                                    r'{\#.*?\#}                 # Match comments'
+#                                    r')',
+#                                    flags=re.DOTALL)
 
     # Split arguments out for filters
-    _split_args_re = re.compile(
-        r"(?P<keyword>[a-zA-Z]\w*?:)?(?P<value>((\'.*?\')|((?<!\')[^:]+?))(?=\s|$))")
+    _split_args_re = re.compile( r"(?P<keyword>[a-zA-Z]\w*?:)?"
+                                 r"(?P<value>((\'.*?\')|"
+                                 r"((?<!\')[^:]+?))"
+                                 r"(?=\s|$))")
 
     # Parse the target and iterables for a for loop, if statement and if else
     _for_parse_re = re.compile(
@@ -93,8 +101,10 @@ class Renderer(object):
     _elif_parse_re = re.compile(r'elif\s+?(?P<expression>.+?)(%})')
 
     # Find variables within expressions - name.name.name|name is valid
-    _variable_re = re.compile(
-        r'\b(?P<Variable>(?<!\'>)([a-zA-Z]\w*)(\.[a-zA-Z]\w*)*([|][a-zA-Z]\w*)?(?!\')(?=\W|$))')
+    _variable_re = re.compile( r'\b(?P<Variable>(?<!\'>)'
+                               r'([a-zA-Z]\w*)(\.[a-zA-Z]\w*)*'
+                               r'([|][a-zA-Z]\w*)?(?!\')(?=\W|$)'
+                               r')')
 
     _filters = {}
 
